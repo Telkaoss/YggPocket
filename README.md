@@ -1,3 +1,7 @@
+# ⚠️ Work in Progress
+
+This project is currently under development. Some features may be incomplete or subject to changes.
+
 # YggPocket - Stremio Addon for Android
 
 Stremio addon that resolves streams using **Yggtorrent** (french - Private Torrent) and Debrid services. Designed to run natively on Android via Termux.
