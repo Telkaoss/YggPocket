@@ -70,8 +70,7 @@ During installation, you will be asked to choose a tunnel type and provide confi
 **3. Cloudflare Named Tunnel**
 - ✅ NO warning page
 - ✅ Permanent domain
-- ❌ Requires personal domain (any registrar, but must use Cloudflare nameservers)
-- Configuration:
+- ❌ Requires personal domain (any registrar)
 
 **4. Localtunnel**
 - ✅ FREE, no account needed
@@ -216,7 +215,7 @@ You can also edit `src/lib/config.js` directly to change settings.
 ## Credits
 
 - Based on the original [Jackettio](https://github.com/arvida42/jackettio) by arvida42
-- Yggtorrent integration inspired by [StreamFusion](https://github.com/laster13/stream-fusion)
+- Yggtorrent integration inspired by [StreamFusion](https://github.com/LimeDrive/stream-fusion) by LimeDrive
 - Android port adapted for Termux
 
 ## License
