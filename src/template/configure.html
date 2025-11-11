@@ -98,6 +98,25 @@
               <small class="text-muted">Automatically add the next espisode on debrid when not avaiable to instantally stream it later.</small>
             </label>
           </div>
+
+          <!-- StremThru Configuration -->
+          <div class="mb-3 border-bottom pb-3">
+            <div class="mb-3 d-flex flex-row">
+              <div class="form-check form-switch">
+                <input class="form-check-input me-1" type="checkbox" v-model="form.useStremThru" id="useStremThru">
+                <label for="useStremThru" class="d-flex flex-column">
+                  <span>Use StremThru as a unified service (Recommended)</span>
+                  <small class="text-muted">Allows checking if files are cached and using any debrid service via StremThru.</small>
+                </label>
+              </div>
+            </div>
+            <div v-if="form.useStremThru" class="mb-3">
+              <label for="stremthruUrl">StremThru URL:</label>
+              <input type="text" v-model="form.stremthruUrl" class="form-control" id="stremthruUrl" placeholder="https://stremthru.13377001.xyz">
+              <small class="text-muted">The URL of your StremThru instance (default: https://stremthru.13377001.xyz)</small>
+            </div>
+          </div>
+
           <div class="mb-3">
             <label>Debrid provider:</label>
             <select v-model="debrid" class="form-select" @change="form.debridId = debrid.id">
@@ -153,7 +172,9 @@
             sortUncached: defaultUserConfig.sortUncached,
             forceCacheNextEpisode: defaultUserConfig.forceCacheNextEpisode,
             priotizeLanguages: defaultUserConfig.priotizeLanguages,
-            indexerTimeoutSec: defaultUserConfig.indexerTimeoutSec
+            indexerTimeoutSec: defaultUserConfig.indexerTimeoutSec,
+            useStremThru: defaultUserConfig.useStremThru || false,
+            stremthruUrl: defaultUserConfig.stremthruUrl || 'https://stremthru.13377001.xyz'
           };
           qualities.forEach(quality => quality.checked = defaultUserConfig.qualities.includes(quality.value));
           indexers.forEach(indexer => indexer.checked = defaultUserConfig.indexers.includes(indexer.value) || defaultUserConfig.indexers.includes('all'));

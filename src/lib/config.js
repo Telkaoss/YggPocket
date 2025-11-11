@@ -1,21 +1,21 @@
 import path from 'path';
 import os from 'os';
 
-export const dataFolder = process.env.DATA_FOLDER || path.join(os.homedir(), '.jackettio');
+export const dataFolder = process.env.DATA_FOLDER || path.join(os.homedir(), '.yggpocket');
 export default {
   dataFolder,
   // Server port
   port: parseInt(process.env.PORT || 4000),
   // Tunnel type: 'ngrok', 'cloudflare', or 'localtunnel'
-  tunnelType: process.env.TUNNELTYPE || 'localtunnel',
+  tunnelType: process.env.TUNNELTYPE || '',
   // Ngrok authtoken (get it from https://dashboard.ngrok.com/get-started/your-authtoken)
-  ngrokAuthtoken: process.env.NGROK_AUTHTOKEN || '',
+  ngrokAuthtoken: process.env.NGROKAUTHTOKEN || '',
   // Ngrok static domain (optional, for paid plans or custom domains)
-  ngrokDomain: process.env.NGROK_DOMAIN || '',
+  ngrokDomain: process.env.NGROKDOMAIN || '',
   // Cloudflare Tunnel token (optional, leave empty for quick tunnel)
-  cloudflareToken: process.env.CLOUDFLARE_TOKEN || '',
+  cloudflareToken: process.env.CLOUDFLARETOKEN || '',
   // Localtunnel subdomain (optional, leave empty for random subdomain)
-  localtunnelSubdomain: process.env.LOCALTUNNEL_SUBDOMAIN || '',
+  localtunnelSubdomain: process.env.LOCALTUNNELSUBDOMAIN || '',
   // https://expressjs.com/en/guide/behind-proxies.html
   trustProxy: boolOrString(process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal'),
   // Yggflix API URL
@@ -25,7 +25,7 @@ export default {
   //  The Movie Database Access Token. Configure to use TMDB rather than cinemeta.
   tmdbAccessToken: process.env.TMDBACCESSTOKEN || '',
   // Addon ID
-  addonId: process.env.ADDON_ID || 'community.stremio.yggflix-android',
+  addonId: process.env.ADDON_ID || 'community.stremio.yggpocket',
   // Addon Name
   addonName: process.env.ADDON_NAME || 'YggPocket',
   // Addon Description
@@ -63,7 +63,9 @@ export default {
     sortUncached: sortCommaListToArray(process.env.DEFAULT_SORT_UNCACHED || 'seeders:true'),
     indexers: commaListToArray(process.env.DEFAULT_INDEXERS || 'all'),
     indexerTimeoutSec: parseInt(process.env.DEFAULT_INDEXER_TIMEOUT_SEC || '60'),
-    passkey: ''
+    passkey: '',
+    useStremThru: (process.env.DEFAULT_USE_STREMTHRU || 'false') === 'true',
+    stremthruUrl: process.env.DEFAULT_STREMTHRU_URL || 'https://stremthru.13377001.xyz'
   },
 
   qualities: [

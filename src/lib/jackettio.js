@@ -12,6 +12,74 @@ const actionInProgress = {
   getDownload: {}
 };
 
+// Global cache for extractMediaInfo results
+const mediaInfoCache = new Map();
+
+// Helper function to extract codec and source information from torrent name
+const extractMediaInfo = (name) => {
+  // Check if the result is already cached
+  if (mediaInfoCache.has(name)) {
+    return mediaInfoCache.get(name);
+  }
+
+  // Use a single pass for all regular expressions
+  let codecInfo = '';
+  let sourceInfo = '';
+  let audioInfo = '';
+
+  // Video codecs (search once)
+  if (/[Hh][Ee][Vv][Cc]|[Xx]265|[Hh]\.?265/.test(name)) {
+    codecInfo = 'H265';
+  } else if (/[Aa][Vv][Cc]|[Xx]264|[Hh]\.?264/.test(name)) {
+    codecInfo = 'H264';
+  } else if (/[Aa][Vv]1/.test(name)) {
+    codecInfo = 'AV1';
+  }
+
+  // Sources (search once)
+  if (/[Rr][Ee][Mm][Uu][Xx]/.test(name)) {
+    sourceInfo = 'REMUX';
+  } else if (/[Bb][Ll][Uu][Rr][Aa][Yy]|[Bb][Dd][Rr][Ii][Pp]/.test(name)) {
+    sourceInfo = 'BLURAY';
+  } else if (/[Ww][Ee][Bb][ -._]?[Dd][Ll]/.test(name)) {
+    sourceInfo = 'WEB-DL';
+  } else if (/[Ww][Ee][Bb][Rr][Ii][Pp]/.test(name)) {
+    sourceInfo = 'WEBRIP';
+  } else if (/\b[Ww][Ee][Bb]\b/.test(name)) {
+    sourceInfo = 'WEB';
+  } else if (/[Hh][Dd][Tt][Vv]/.test(name)) {
+    sourceInfo = 'HDTV';
+  } else if (/[Dd][Vv][Dd][Rr][Ii][Pp]/.test(name)) {
+    sourceInfo = 'DVDRIP';
+  }
+
+  // Audio (search once)
+  if (/[Dd][Tt][Ss][ -._]?[Hh][Dd]/.test(name)) {
+    audioInfo = 'DTS-HD';
+  } else if (/[Dd][Tt][Ss][ -._]?[Xx]/.test(name)) {
+    audioInfo = 'DTS:X';
+  } else if (/[Aa][Tt][Mm][Oo][Ss]/.test(name)) {
+    audioInfo = 'ATMOS';
+  } else if (/[Tt][Rr][Uu][Ee][Hh][Dd]/.test(name)) {
+    audioInfo = 'TRUEHD';
+  } else if (/[Dd][Dd]\+|[Ee][-_]?[Aa][Cc][-_]?3/.test(name)) {
+    audioInfo = 'DD+';
+  } else if (/[Dd][Dd]/.test(name)) {
+    audioInfo = 'DD';
+  } else if (/[Dd][Tt][Ss]/.test(name)) {
+    audioInfo = 'DTS';
+  } else if (/[Aa][Aa][Cc]/.test(name)) {
+    audioInfo = 'AAC';
+  }
+
+  const result = { codecInfo, sourceInfo, audioInfo };
+
+  // Cache the result
+  mediaInfoCache.set(name, result);
+
+  return result;
+};
+
 function parseStremioId(stremioId){
   const [id, season, episode] = stremioId.split(':');
   return {id, season: parseInt(season || 0), episode: parseInt(episode || 0)};
@@ -234,6 +302,48 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
 
 }
 
+function formatLanguages(languages, torrentName = '') {
+  // If no language is specified, return an empty array
+  if (!languages || languages.length === 0) return [];
+
+  // Check if "multi" is present
+  const hasMulti = languages.some(lang => lang.value === 'multi');
+
+  // Check if French is present (VF, VFF, VFI, french)
+  const hasFrench = languages.some(lang =>
+    lang.value === 'french' ||
+    (lang.value && (
+      lang.value.toLowerCase().includes('vf') ||
+      lang.value.toLowerCase().includes('français') ||
+      lang.value.toLowerCase().includes('francais')
+    ))
+  );
+
+  // Also check in the torrent name for "multi.vff", "multi.vfi", etc.
+  const hasFrenchInName = torrentName && (
+    (torrentName.toLowerCase().includes('multi') || torrentName.toLowerCase().includes('dual')) &&
+    (torrentName.toLowerCase().includes('.vf') || torrentName.toLowerCase().includes('vff') ||
+     torrentName.toLowerCase().includes('vfi') || torrentName.toLowerCase().includes('truefrench') ||
+     torrentName.toLowerCase().includes('french'))
+  );
+
+  // Get all language emojis
+  const languageEmojis = languages.map(lang => lang.emoji);
+
+  // If "multi" is present and French is also present (in the language or the name), add the French flag next to the globe
+  if (hasMulti && (hasFrench || hasFrenchInName)) {
+    // Find the index of the globe emoji (multi)
+    const multiIndex = languages.findIndex(lang => lang.value === 'multi');
+    if (multiIndex !== -1) {
+      // Replace the globe emoji with "globe+French flag"
+      const frenchEmoji = '🇫🇷';
+      languageEmojis[multiIndex] = `${languages[multiIndex].emoji} ${frenchEmoji}`;
+    }
+  }
+
+  return languageEmojis;
+}
+
 async function prepareNextEpisode(userConfig, metaInfos, debridInstance){
 
   try {
@@ -320,16 +430,49 @@ export async function getStreams(userConfig, type, stremioId, publicUrl){
 
   return torrents.map(torrent => {
     const file = type == 'series' && torrent.infos.files.length ? searchEpisodeFile(torrent.infos.files.sort(sortBy('size', true)), season, episode) : {};
-    const quality = torrent.quality > 0 ? config.qualities.find(q => q.value == torrent.quality).label : '';
+    const quality = torrent.quality > 0 ? `(${config.qualities.find(q => q.value == torrent.quality).label})` : '';
+    const { codecInfo, sourceInfo, audioInfo } = extractMediaInfo(torrent.name);
+
+    // Format media information nicely
+    const mediaInfo = [];
+    if (codecInfo) mediaInfo.push(`🎬 ${codecInfo}`);
+    if (sourceInfo) mediaInfo.push(`📀 ${sourceInfo}`);
+    if (audioInfo) mediaInfo.push(`🔊 ${audioInfo}`);
+
     const rows = [torrent.name];
-    if(type == 'series' && file.name)rows.push(file.name);
-    if(torrent.infoText)rows.push(`ℹ️ ${torrent.infoText}`);
-    rows.push([`💾${bytesToSize(file.size || torrent.size)}`, `👥${torrent.seeders}`, `⚙️${torrent.indexerId}`, ...(torrent.languages || []).map(language => language.emoji)].join(' '));
-    if(torrent.progress && !torrent.isCached){
+    if(type == 'series' && file.name) rows.push(file.name);
+    if(torrent.infoText) rows.push(`ℹ️ ${torrent.infoText}`);
+
+    // Format main info line with improved styling
+    rows.push([
+      `💾 ${bytesToSize(file.size || torrent.size)}`,
+      `👥 ${torrent.seeders}`,
+      `⚙️ ${torrent.indexerId}`,
+      ...formatLanguages(torrent.languages || [], torrent.name)
+    ].join(' '));
+
+    // Add media info if available
+    if (mediaInfo.length > 0) {
+      rows.push(mediaInfo.join(' '));
+    }
+
+    // Only show download progress if there's actual progress (not 0%)
+    if(torrent.progress && !torrent.isCached && (torrent.progress.percent > 0 || torrent.progress.speed > 0)) {
       rows.push(`⬇️ ${torrent.progress.percent}% ${bytesToSize(torrent.progress.speed)}/s`);
     }
+
+    // Use the appropriate status icon
+    let statusIcon = '';
+    if (torrent.isCached) {
+      // For cached torrents, use the yellow lightning bolt
+      statusIcon = '⚡';
+    } else {
+      // For non-cached torrents, use the down arrow
+      statusIcon = '⬇️';
+    }
+
     return {
-      name: `[${debridInstance.shortName}${torrent.isCached ? '+' : ''}] ${config.addonName} ${quality}`,
+      name: `[${debridInstance.shortName}${statusIcon}] ${config.addonName} ${quality}`,
       title: rows.join("\n"),
       url: torrent.disabled ? '#' : `${publicUrl}/${btoa(JSON.stringify(userConfig))}/download/${type}/${stremioId}/${torrent.id}`
     };

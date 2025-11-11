@@ -53,9 +53,9 @@ const execCommandWithRetry = async (command, retries = 5, timeout = 120000) => {
   }
 };
 
-// Install dependencies
+// Install system dependencies (Termux packages)
 const installDependencies = async () => {
-  console.log('Installing dependencies...');
+  console.log('Installing system dependencies...');
   try {
     // Update Termux packages
     await execCommandWithRetry('pkg update -y && pkg upgrade -y');
@@ -63,34 +63,10 @@ const installDependencies = async () => {
     // Install necessary system dependencies
     await execCommandWithRetry('pkg install -y nodejs wget');
 
-    // Clean npm cache
-    await execCommandWithRetry('npm cache clean --force');
-
-    // Install npm dependencies individually
-    const dependencies = [
-      'express',
-      'compression',
-      'express-rate-limit',
-      '@ngrok/ngrok',
-      'localtunnel',
-      'lokijs',
-      'showdown',
-      'dotenv',
-      'axios'
-    ];
-    
-    for (const dep of dependencies) {
-      try {
-        await execCommandWithRetry(`npm install ${dep} --no-bin-links`, 3, 180000);
-      } catch (error) {
-        console.warn(`Failed to install ${dep}, trying with --legacy-peer-deps`);
-        await execCommandWithRetry(`npm install ${dep} --no-bin-links --legacy-peer-deps`, 3, 180000);
-      }
-    }
-    
-    console.log('Dependencies installed successfully.');
+    console.log('✅ System dependencies installed successfully.');
+    console.log('ℹ️  npm packages will be installed automatically from package.json');
   } catch (error) {
-    console.error('Error installing dependencies:', error);
+    console.error('Error installing system dependencies:', error);
     throw error;
   }
 };
@@ -99,19 +75,17 @@ const installDependencies = async () => {
 
 // Update config file
 const updateConfig = (configFile, key, value) => {
-  if (value && value.trim() !== '') {
-    // Match the key and capture the whole line
-    const regex = new RegExp(`(${key}:\\s*)('(?:[^']*'|[^']*')'|process.env[^,]*|''|true|false|[0-9]*|null)`, 'i');
-    // Replace with the new value, preserving the rest of the line
-    return configFile.replace(regex, (match, p1) => {
-      // Preserve the 'process.env' part if it exists
-      if (match.includes('process.env')) {
-        return `${p1}process.env.${key.toUpperCase()} || '${value}'`;
-      }
-      return `${p1}'${value}'`;
-    });
-  }
-  return configFile;
+  // Match the key and capture the whole line
+  const regex = new RegExp(`(${key}:\\s*)('(?:[^']*'|[^']*')'|process.env[^,]*|''|true|false|[0-9]*|null)`, 'i');
+
+  // Replace with the new value, preserving the rest of the line
+  return configFile.replace(regex, (match, p1) => {
+    // Preserve the 'process.env' part if it exists
+    if (match.includes('process.env')) {
+      return `${p1}process.env.${key.toUpperCase()} || '${value || ''}'`;
+    }
+    return `${p1}'${value || ''}'`;
+  });
 };
 
 // Function to start the server
@@ -157,9 +131,10 @@ const main = async () => {
     console.log('');
     console.log('Choose your tunnel type:');
     console.log('');
-    console.log('1️⃣  Ngrok (Free Static Domain)');
-    console.log('   ✅ FREE permanent domain (never changes)');
+    console.log('1️⃣  Ngrok');
+    console.log('   ✅ FREE permanent domain (random subdomain)');
     console.log('   ❌ Warning page (may block Windows/Web Stremio)');
+    console.log('   ⚠️  Custom subdomain requires PAID plan');
     console.log('   📋 Requires: Free Ngrok account + authtoken');
     console.log('');
     console.log('2️⃣  Cloudflare Quick Tunnel (RECOMMENDED FOR WINDOWS)');
@@ -171,13 +146,13 @@ const main = async () => {
     console.log('3️⃣  Cloudflare Named Tunnel');
     console.log('   ✅ NO warning page');
     console.log('   ✅ Permanent domain');
-    console.log('   ❌ Requires personal domain ($10/year)');
-    console.log('   📋 Requires: Cloudflare account + token + domain');
+    console.log('   ❌ Requires personal domain (any registrar)');
+    console.log('   📋 Requires: Cloudflare account + token + domain with CF nameservers');
     console.log('');
     console.log('4️⃣  Localtunnel');
     console.log('   ✅ FREE, no account needed');
     console.log('   ✅ Custom persistent subdomain');
-    console.log('   ❌ Warning page (may block Windows/Web Stremio)');
+    console.log('   ⚠️  IP confirmation needed every 7 days');
     console.log('   📋 Requires: Nothing!');
     console.log('');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -200,16 +175,23 @@ const main = async () => {
       console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('   NGROK CONFIGURATION');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('⚠️  Warning: Ngrok shows warning page on Windows/Web Stremio');
+      console.log('');
       console.log('To get your Ngrok authtoken:');
       console.log('1. Go to https://dashboard.ngrok.com/signup (create free account)');
       console.log('2. Navigate to "Your Authtoken" section');
       console.log('3. Copy your authtoken');
       console.log('');
-      console.log('To get a FREE static domain:');
+      console.log('Static domain (optional):');
+      console.log('- FREE: Random subdomain (e.g., a1b2c3d4.ngrok.app) - permanent');
+      console.log('- PAID: Custom subdomain (e.g., ygg-api.ngrok.app) - permanent');
+      console.log('');
+      console.log('To create a FREE static domain:');
       console.log('1. Go to https://dashboard.ngrok.com/domains');
-      console.log('2. Click "+ New Domain"');
-      console.log('3. Choose a subdomain (ex: yggflix)');
-      console.log('4. Select .ngrok-free.dev or .ngrok-free.app');
+      console.log('2. Click "+ New Domain" - you\'ll get a random subdomain');
+      console.log('3. Copy the full domain (e.g., "a1b2c3d4.ngrok.app")');
+      console.log('');
+      console.log('⚠️  Leave empty to get a new random domain on each restart');
       console.log('');
       while (!ngrokAuthtoken || ngrokAuthtoken.trim() === '') {
         ngrokAuthtoken = await question('REQUIRED: Enter your Ngrok authtoken: ');
@@ -217,7 +199,7 @@ const main = async () => {
           console.log('⚠️  Ngrok authtoken is required! Please enter a valid token.');
         }
       }
-      ngrokDomain = await question('RECOMMENDED: Enter Ngrok static domain (press Enter to skip): ');
+      ngrokDomain = await question('Optional: Enter static domain (e.g., a1b2c3d4.ngrok.app, or press Enter to skip): ');
       tunnelType = 'ngrok';
     } else if (tunnelChoice === '2') {
       // Cloudflare Quick Tunnel
@@ -274,25 +256,25 @@ const main = async () => {
       tunnelType = 'localtunnel';
     }
 
-    console.log('\n--- Yggflix Configuration (REQUIRED) ---');
-    console.log('Yggflix is REQUIRED to search torrents!');
-    console.log('To get your Yggflix passkey:');
-    console.log('1. Go to https://www.yggflix.fr/');
+    console.log('\n--- Yggtorrent Configuration (REQUIRED) ---');
+    console.log('Yggtorrent is REQUIRED to search torrents!');
+    console.log('To get your Yggtorrent passkey:');
+    console.log('1. Go to Yggtorrent website');
     console.log('2. Login to your account');
     console.log('3. Go to your profile and copy your passkey (32 characters)');
     console.log('');
     let yggflixPasskey = '';
     while (!yggflixPasskey || yggflixPasskey.trim() === '') {
-      yggflixPasskey = await question('REQUIRED: Enter your Yggflix passkey (32 characters): ');
+      yggflixPasskey = await question('REQUIRED: Enter your Yggtorrent passkey (32 characters): ');
       if (!yggflixPasskey || yggflixPasskey.trim() === '') {
-        console.log('⚠️  Yggflix passkey is required! Please enter a valid passkey.');
+        console.log('⚠️  Yggtorrent passkey is required! Please enter a valid passkey.');
       } else if (!yggflixPasskey.match(/^[a-f0-9]{32}$/i)) {
         console.log('⚠️  Warning: Passkey should be 32 hexadecimal characters.');
       }
     }
     
     console.log('\n--- TMDB Configuration (REQUIRED) ---');
-    console.log('TMDB is REQUIRED for Yggflix to work properly!');
+    console.log('TMDB is REQUIRED for Yggtorrent to work properly!');
     console.log('To get your TMDB access token:');
     console.log('1. Go to https://www.themoviedb.org/settings/api');
     console.log('2. Create an API key if you don\'t have one');

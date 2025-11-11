@@ -417,6 +417,16 @@ const startServer = async () => {
           console.log(`Requesting subdomain: ${subdomain}`);
         }
 
+        // Get public IP for Localtunnel password
+        let publicIp = 'Unable to fetch';
+        try {
+          const axios = (await import('axios')).default;
+          const response = await axios.get('https://api.ipify.org?format=text', { timeout: 5000 });
+          publicIp = response.data;
+        } catch (err) {
+          console.log('Could not fetch public IP:', err.message);
+        }
+
         // Start localtunnel
         const tunnel = await localtunnel({
           port: config.port,
@@ -438,7 +448,9 @@ const startServer = async () => {
         console.log('───────────────────────────────────────');
         console.log(`🌐 Public URL: ${tunnelUrl}`);
         console.log('───────────────────────────────────────');
-        console.log(`📱 Add this URL to Stremio: ${tunnelUrl}/manifest.json`);
+        console.log(`📱 Add this URL to Stremio: ${tunnelUrl}/configure`);
+        console.log('───────────────────────────────────────');
+        console.log(`🔑 Localtunnel Password: ${publicIp}`);
         console.log('───────────────────────────────────────');
         console.log(`ℹ️  This subdomain will persist across restarts`);
         console.log('───────────────────────────────────────');
