@@ -73,6 +73,51 @@ const installDependencies = async () => {
 
 // Yggflix doesn't require installation, it's an external API
 
+// Install cloudflared for Termux
+const installCloudflared = async () => {
+  console.log('\n🔍 Checking cloudflared installation...');
+
+  try {
+    // Check if cloudflared is already installed
+    await new Promise((resolve, reject) => {
+      exec('cloudflared --version', (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+    console.log('✅ cloudflared is already installed.');
+    return true;
+  } catch (error) {
+    console.log('⚠️  cloudflared not found. Installing from official Termux repository...');
+
+    try {
+      // Install cloudflared from official Termux package
+      console.log('📥 Installing cloudflared package...');
+      await execCommandWithRetry('pkg install -y cloudflared', 3, 120000);
+
+      // Verify installation
+      await new Promise((resolve, reject) => {
+        exec('cloudflared --version', (error, stdout) => {
+          if (error) {
+            reject(new Error('cloudflared installation failed'));
+          } else {
+            console.log(`✅ cloudflared installed successfully: ${stdout.trim()}`);
+            resolve();
+          }
+        });
+      });
+
+      return true;
+    } catch (installError) {
+      console.error('❌ Failed to install cloudflared automatically.');
+      console.log('\n📝 Manual installation instructions:');
+      console.log('   pkg install cloudflared');
+      console.log('');
+      return false;
+    }
+  }
+};
+
 // Update config file
 const updateConfig = (configFile, key, value) => {
   // Match the key and capture the whole line
@@ -137,7 +182,7 @@ const main = async () => {
     console.log('   ⚠️  Custom subdomain requires PAID plan');
     console.log('   📋 Requires: Free Ngrok account + authtoken');
     console.log('');
-    console.log('2️⃣  Cloudflare Quick Tunnel (RECOMMENDED FOR WINDOWS)');
+    console.log('2️⃣  Cloudflare Quick Tunnel');
     console.log('   ✅ NO warning page (works on all platforms)');
     console.log('   ✅ FREE, no account needed');
     console.log('   ❌ Domain changes at each restart');
@@ -209,6 +254,18 @@ const main = async () => {
       console.log('✅ No configuration needed!');
       console.log('A temporary domain will be assigned at each startup.');
       console.log('');
+
+      // Install cloudflared if needed
+      const cloudflaredInstalled = await installCloudflared();
+      if (!cloudflaredInstalled) {
+        console.log('⚠️  Warning: Cloudflare tunnel may not work without cloudflared installed.');
+        const proceed = await question('Continue anyway? (y/n): ');
+        if (proceed.toLowerCase() !== 'y') {
+          console.log('Setup cancelled. Please install cloudflared manually and run setup again.');
+          process.exit(0);
+        }
+      }
+
       tunnelType = 'cloudflare';
     } else if (tunnelChoice === '3') {
       // Cloudflare Named Tunnel
@@ -222,6 +279,18 @@ const main = async () => {
       console.log('4. Configure a public hostname in Cloudflare dashboard');
       console.log('   (Requires a personal domain registered in Cloudflare)');
       console.log('');
+
+      // Install cloudflared if needed
+      const cloudflaredInstalled = await installCloudflared();
+      if (!cloudflaredInstalled) {
+        console.log('⚠️  Warning: Cloudflare tunnel may not work without cloudflared installed.');
+        const proceed = await question('Continue anyway? (y/n): ');
+        if (proceed.toLowerCase() !== 'y') {
+          console.log('Setup cancelled. Please install cloudflared manually and run setup again.');
+          process.exit(0);
+        }
+      }
+
       while (!cloudflareToken || cloudflareToken.trim() === '') {
         cloudflareToken = await question('REQUIRED: Enter your Cloudflare tunnel token: ');
         if (!cloudflareToken || cloudflareToken.trim() === '') {

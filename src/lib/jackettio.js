@@ -115,10 +115,32 @@ function priotizeItems(allItems, priotizeItems, max){
 }
 
 function searchEpisodeFile(files, season, episode){
-  return files.find(file => file.name.includes(`S${numberPad(season)}E${numberPad(episode)}`))
-    || files.find(file => file.name.includes(`${season}${numberPad(episode)}`))
-    || files.find(file => file.name.includes(`${numberPad(episode)}`))
-    || false;
+  // Try exact patterns first (most reliable)
+  // Pattern 1: S01E01 format (with leading zeros)
+  let match = files.find(file => file.name.match(new RegExp(`S0*${season}E0*${episode}(?!\\d)`, 'i')));
+  if (match) return match;
+
+  // Pattern 2: 1x01 format
+  match = files.find(file => file.name.match(new RegExp(`\\b${season}x0*${episode}(?!\\d)`, 'i')));
+  if (match) return match;
+
+  // Pattern 3: Season X Episode Y format
+  match = files.find(file => file.name.match(new RegExp(`Season\\s*0*${season}.*Episode\\s*0*${episode}(?!\\d)`, 'i')));
+  if (match) return match;
+
+  // Pattern 4: Episode only (e.g., E01, ep01) - but verify it's in the right season context
+  match = files.find(file => {
+    const hasEpisode = file.name.match(new RegExp(`\\bE0*${episode}(?!\\d)|\\bep\\.?\\s*0*${episode}(?!\\d)`, 'i'));
+    const hasSeason = file.name.match(new RegExp(`S0*${season}(?!\\d)`, 'i'));
+    return hasEpisode && (!hasSeason || hasSeason); // If season mentioned, it must match
+  });
+  if (match) return match;
+
+  // Fallback: Old pattern for backward compatibility (but more strict)
+  match = files.find(file => file.name.includes(`${season}${numberPad(episode)}`));
+  if (match) return match;
+
+  return false;
 }
 
 async function getTorrents(userConfig, metaInfos, debridInstance){
@@ -143,6 +165,27 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
       if(!qualities.includes(torrent.quality))return false;
       const torrentWords = parseWords(torrent.name.toLowerCase());
       if(excludeKeywords.find(word => torrentWords.includes(word)))return false;
+
+      // For series, filter by season
+      if(type === 'series' && season) {
+        const torrentName = torrent.name;
+        // Check if torrent is a season pack or episode from the requested season
+        // Pattern 1: S01, S02, etc. (with leading zero)
+        const seasonPattern = new RegExp(`S0*${season}(?:E\\d+)?(?!\\d)`, 'i');
+        // Pattern 2: Season 1, Season 01, etc.
+        const seasonTextPattern = new RegExp(`Season\\s*0*${season}(?!\\d)`, 'i');
+        // Pattern 3: Complete series packs (usually contain all seasons)
+        const completePattern = /complete|integr[ae]l/i;
+
+        const matchesSeason = seasonPattern.test(torrentName) ||
+                             seasonTextPattern.test(torrentName) ||
+                             completePattern.test(torrentName);
+
+        if(!matchesSeason) {
+          return false;
+        }
+      }
+
       return true;
     };
     const filterLanguage = (torrent) => {

@@ -343,6 +343,24 @@ const startServer = async () => {
           stdio: ['ignore', 'pipe', 'pipe']
         });
 
+        // Handle spawn errors (e.g., cloudflared not found)
+        cloudflaredProcess.on('error', (err) => {
+          if (err.code === 'ENOENT') {
+            console.error('\n❌ ERROR: cloudflared is not installed!');
+            console.error('───────────────────────────────────────');
+            console.error('📝 To install cloudflared, run:');
+            console.error('   npm run install');
+            console.error('   (or)');
+            console.error('   pkg install cloudflared');
+            console.error('───────────────────────────────────────');
+            console.error('💡 TIP: Use Ngrok or Localtunnel instead (no installation needed)');
+            console.error('   Change TUNNEL_TYPE in .env to "ngrok" or "localtunnel"');
+            console.error('───────────────────────────────────────\n');
+          } else {
+            console.error('❌ Error starting cloudflared:', err);
+          }
+        });
+
         // Capture tunnel URL from cloudflared output
         let tunnelUrl = '';
         let connectionStarted = false;

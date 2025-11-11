@@ -227,25 +227,58 @@ export default class StremThru {
 
   async getFilesFromBuffer(buffer, infoHash) {
     try {
-      // Convertir le buffer en lien magnet
-      const parseTorrent = (await import('parse-torrent')).default;
-      const toMagnetURI = (await import('parse-torrent')).toMagnetURI;
+      // Upload the .torrent file directly to StremThru via multipart/form-data
+      const body = new FormData();
+      body.append('torrent', new Blob([buffer]), 'file.torrent');
 
-      const parsedTorrent = await parseTorrent(new Uint8Array(buffer));
-      const magnet = toMagnetURI(parsedTorrent);
+      const addRes = await this.#request('POST', '/magnets', { body });
 
-      console.log(`Converted torrent buffer to magnet: ${magnet}`);
-
-      return this.getFilesFromMagnet(magnet, infoHash);
-    } catch (err) {
-      console.error(`Error converting torrent buffer to magnet: ${err.message}`);
-
-      // Fallback to infoHash if available
-      if (infoHash) {
-        return this.getFilesFromHash(infoHash);
-      } else {
+      if (!addRes || !addRes.data || !addRes.data.id) {
+        console.error('Failed to add torrent file');
         throw new Error(ERROR.NOT_READY);
       }
+
+      const magnetId = addRes.data.id;
+
+      // Check the magnet status
+      const magnetInfo = await this.#request('GET', `/magnets/${magnetId}`);
+
+      if (!magnetInfo || !magnetInfo.data) {
+        console.error('Failed to get magnet info');
+        throw new Error(ERROR.NOT_READY);
+      }
+
+      // If status is not ready, throw error
+      if (magnetInfo.data.status !== 'downloaded' && magnetInfo.data.status !== 'cached') {
+        console.log(`Torrent not ready, status: ${magnetInfo.data.status}`);
+        throw new Error(ERROR.NOT_READY);
+      }
+
+      // Return the files
+      if (magnetInfo.data.files && magnetInfo.data.files.length > 0) {
+        return magnetInfo.data.files.map(file => {
+          return {
+            name: file.name.split('/').pop(),
+            size: file.size,
+            id: `${magnetId}:${file.index}`,
+            url: '',
+            ready: true,
+            status: magnetInfo.data.status
+          };
+        });
+      } else {
+        console.error('No files found in torrent');
+        throw new Error(ERROR.NOT_READY);
+      }
+    } catch (err) {
+      console.error(`Error uploading torrent file: ${err.message}`);
+      // Si c'est déjà une erreur connue, la relancer
+      if (err.message && Object.values(ERROR).includes(err.message)) {
+        throw err;
+      }
+      // Sinon, analyser l'erreur et lancer l'exception appropriée
+      const errorType = this.constructor.analyzeError(err);
+      throw new Error(errorType);
     }
   }
 
@@ -453,14 +486,24 @@ export default class StremThru {
   }
 
   async #request(method, path, opts = {}) {
+    // Build base headers
+    const baseHeaders = {
+      'accept': 'application/json',
+      'X-StremThru-Store-Name': this.#storeType,
+      'X-StremThru-Store-Authorization': `Bearer ${this.#apiKey}`
+    };
+
+    // Only set content-type if body is not FormData
+    // (FormData sets its own content-type with boundary)
+    if (!(opts.body instanceof FormData)) {
+      baseHeaders['content-type'] = 'application/json';
+    }
+
     opts = Object.assign(opts, {
       method,
-      headers: { 
-        'accept': 'application/json',
-        'content-type': 'application/json',
-        'X-StremThru-Store-Name': this.#storeType,
-        'X-StremThru-Store-Authorization': `Bearer ${this.#apiKey}`,
-        ...opts.headers 
+      headers: {
+        ...baseHeaders,
+        ...opts.headers
       }
     });
 
