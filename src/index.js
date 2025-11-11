@@ -311,7 +311,7 @@ const startServer = async () => {
           console.log('───────────────────────────────────────');
           console.log(`🌐 Public URL: ${tunnelUrl}`);
           console.log('───────────────────────────────────────');
-          console.log(`📱 Add this URL to Stremio: ${tunnelUrl}/manifest.json`);
+          console.log(`📱 Configure addon: ${tunnelUrl}/configure`);
           console.log('───────────────────────────────────────');
 
         } catch (error) {
@@ -367,7 +367,6 @@ const startServer = async () => {
 
         cloudflaredProcess.stdout.on('data', (data) => {
           const output = data.toString();
-          console.log(output);
 
           if (config.cloudflareToken) {
             // For Named Tunnel, check for successful connection
@@ -382,7 +381,7 @@ const startServer = async () => {
                 console.log('📋 Check your public URL in Cloudflare dashboard:');
                 console.log('   https://one.dash.cloudflare.com/');
                 console.log('───────────────────────────────────────');
-                console.log('📱 Add your tunnel URL to Stremio: https://your-domain/manifest.json');
+                console.log('📱 Configure addon: https://your-domain/configure');
                 console.log('───────────────────────────────────────');
               }
             }
@@ -395,7 +394,7 @@ const startServer = async () => {
               console.log('───────────────────────────────────────');
               console.log(`🌐 Public URL: ${tunnelUrl}`);
               console.log('───────────────────────────────────────');
-              console.log(`📱 Add this URL to Stremio: ${tunnelUrl}/manifest.json`);
+              console.log(`📱 Configure addon: ${tunnelUrl}/configure`);
               console.log('───────────────────────────────────────');
             }
           }
@@ -403,12 +402,26 @@ const startServer = async () => {
 
         cloudflaredProcess.stderr.on('data', (data) => {
           const errOutput = data.toString();
-          // Cloudflared sometimes outputs info to stderr
-          if (errOutput.includes('http') || errOutput.includes('https')) {
-            console.log(`Cloudflare: ${errOutput}`);
-          } else {
-            console.error(`Cloudflare: ${errOutput}`);
+
+          // Check for the tunnel URL in stderr (Cloudflare often outputs there)
+          if (!config.cloudflareToken) {
+            const urlMatch = errOutput.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
+            if (urlMatch && !tunnelUrl) {
+              tunnelUrl = urlMatch[0];
+              console.log('\n✅ Cloudflare Quick Tunnel started successfully!');
+              console.log('───────────────────────────────────────');
+              console.log(`🌐 Public URL: ${tunnelUrl}`);
+              console.log('───────────────────────────────────────');
+              console.log(`📱 Configure addon: ${tunnelUrl}/configure`);
+              console.log('───────────────────────────────────────\n');
+            }
           }
+
+          // Only log actual errors, not INFO/WRN messages
+          if (errOutput.includes('ERR') && !errOutput.includes('Cannot determine default origin certificate')) {
+            console.error(`Cloudflare Error: ${errOutput.trim()}`);
+          }
+          // Silently ignore INFO, WRN, and expected errors
         });
 
         cloudflaredProcess.on('close', (code) => {
