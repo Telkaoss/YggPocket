@@ -1,0 +1,37 @@
+{
+  "name": "yggflix-android",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "install": "node setup.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "stremio",
+    "addon",
+    "yggflix",
+    "yggtorrent",
+    "debrid",
+    "android",
+    "termux"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Stremio addon for Android using Yggflix API and Debrid services",
+  "dependencies": {
+    "@ngrok/ngrok": "^1.5.2",
+    "axios": "^0.21.4",
+    "cache-manager": "^3.6.3",
+    "cache-manager-fs-hash": "^2.0.0",
+    "compression": "^1.8.1",
+    "dotenv": "^10.0.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^5.5.1",
+    "localtunnel": "^2.0.2",
+    "lokijs": "^1.5.12",
+    "parse-torrent": "^9.1.5",
+    "showdown": "^1.9.1"
+  }
+}

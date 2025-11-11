@@ -1,0 +1,126 @@
+import path from 'path';
+import os from 'os';
+
+export const dataFolder = process.env.DATA_FOLDER || path.join(os.homedir(), '.jackettio');
+export default {
+  dataFolder,
+  // Server port
+  port: parseInt(process.env.PORT || 4000),
+  // Tunnel type: 'ngrok', 'cloudflare', or 'localtunnel'
+  tunnelType: process.env.TUNNELTYPE || 'localtunnel',
+  // Ngrok authtoken (get it from https://dashboard.ngrok.com/get-started/your-authtoken)
+  ngrokAuthtoken: process.env.NGROK_AUTHTOKEN || '',
+  // Ngrok static domain (optional, for paid plans or custom domains)
+  ngrokDomain: process.env.NGROK_DOMAIN || '',
+  // Cloudflare Tunnel token (optional, leave empty for quick tunnel)
+  cloudflareToken: process.env.CLOUDFLARE_TOKEN || '',
+  // Localtunnel subdomain (optional, leave empty for random subdomain)
+  localtunnelSubdomain: process.env.LOCALTUNNEL_SUBDOMAIN || '',
+  // https://expressjs.com/en/guide/behind-proxies.html
+  trustProxy: boolOrString(process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal'),
+  // Yggflix API URL
+  yggflixUrl: process.env.YGGFLIX_URL || 'https://yggflix.fr',
+  // Yggflix Passkey (32 characters)
+  yggflixPasskey: process.env.YGGFLIXPASSKEY || '',
+  //  The Movie Database Access Token. Configure to use TMDB rather than cinemeta.
+  tmdbAccessToken: process.env.TMDBACCESSTOKEN || '',
+  // Addon ID
+  addonId: process.env.ADDON_ID || 'community.stremio.yggflix-android',
+  // Addon Name
+  addonName: process.env.ADDON_NAME || 'YggPocket',
+  // Addon Description
+  addonDescription: process.env.ADDON_DESCRIPTION || 'Stremio addon that resolve streams using YggTorrent and Debrid. It seamlessly integrates with Yggtorrent private tracker.',
+  // Addon Icon
+  addonIcon: process.env.ADDON_ICON || 'https://avatars.githubusercontent.com/u/15383019?s=48&v=4',
+  // When hosting a public instance with a private tracker, you must configure this setting to:
+  // - Request the user's passkey on the /configure page.
+  // - Replace your passkey "REPLACE_PASSKEY" with theirs when sending uncached torrents to the debrid.
+  // If you do not configure this setting with private tracker, your passkey could be exposed to users who add uncached torrents.
+  replacePasskey: process.env.REPLACE_PASSKEY || '',
+  // The URL where the user can locate their passkey (typically the tracker URL).
+  replacePasskeyInfoUrl: process.env.REPLACE_PASSKEY_INFO_URL || '',
+  // The passkey pattern
+  replacePasskeyPattern: process.env.REPLACE_PASSKEY_PATTERN || '[a-zA-Z0-9]+',
+  // List of config keys that user can't configure
+  immulatableUserConfigKeys: commaListToArray(process.env.IMMULATABLE_USER_CONFIG_KEYS || ''),
+  // Welcome message in /configure page. Markdown format
+  welcomeMessage: process.env.WELCOME_MESSAGE || '',
+  // Trust the cf-connecting-ip header
+  trustCfIpHeader: (process.env.TRUST_CF_IP_HEADER || 'false') === 'true',
+  // Rate limit interval in seconds to resolve stream
+  rateLimitWindow: parseInt(process.env.RATE_LIMIT_WINDOW || 60 * 60),
+  // Rate limit the number of requests to resolve stream
+  rateLimitRequest: parseInt(process.env.RATE_LIMIT_REQUEST || 150),
+
+  defaultUserConfig: {
+    qualities: commaListToArray(process.env.DEFAULT_QUALITIES || '0, 720, 1080').map(v => parseInt(v)),
+    excludeKeywords: commaListToArray(process.env.DEFAULT_EXCLUDE_KEYWORDS || ''),
+    maxTorrents: parseInt(process.env.DEFAULT_MAX_TORRENTS || 8),
+    priotizeLanguages: commaListToArray(process.env.DEFAULT_PRIOTIZE_LANGUAGES || ''),
+    priotizePackTorrents:  parseInt(process.env.DEFAULT_PRIOTIZE_PACK_TORRENTS || 2),
+    forceCacheNextEpisode: (process.env.DEFAULT_FORCE_CACHE_NEXT_EPISODE || 'false') === 'true',
+    sortCached: sortCommaListToArray(process.env.DEFAULT_SORT_CACHED || 'quality:true, size:true'),
+    sortUncached: sortCommaListToArray(process.env.DEFAULT_SORT_UNCACHED || 'seeders:true'),
+    indexers: commaListToArray(process.env.DEFAULT_INDEXERS || 'all'),
+    indexerTimeoutSec: parseInt(process.env.DEFAULT_INDEXER_TIMEOUT_SEC || '60'),
+    passkey: ''
+  },
+
+  qualities: [
+    {value: 0, label: 'Unknown'},
+    {value: 360, label: '360p'},
+    {value: 480, label: '480p'},
+    {value: 720, label: '720p'},
+    {value: 1080, label: '1080p'},
+    {value: 2160, label: '4K'}
+  ],
+  sorts: [
+    {value: [['quality', true], ['seeders', true]], label: 'By quality then seeders'},
+    {value: [['quality', true], ['size', true]], label: 'By quality then size'},
+    {value: [['seeders', true]], label: 'By seeders'},
+    {value: [['quality', true]], label: 'By quality'},
+    {value: [['size', true]], label: 'By size'}
+  ],
+  languages: [
+    {value: 'multi',      emoji: '🌎', pattern: 'multi'},
+    {value: 'arabic',     emoji: '🇦🇪', pattern: 'arabic'},
+    {value: 'chinese',    emoji: '🇨🇳', pattern: 'chinese'},
+    {value: 'german',     emoji: '🇩🇪', pattern: 'german'},
+    {value: 'english',    emoji: '🇺🇸', pattern: '(eng(lish)?)'},
+    {value: 'spanish',    emoji: '🇪🇸', pattern: 'spa(nish)?'},
+    {value: 'french',     emoji: '🇫🇷', pattern: 'fre(nch)?'},
+    {value: 'dutch',      emoji: '🇳🇱', pattern: 'dutch'},
+    {value: 'italian',    emoji: '🇮🇹', pattern: 'ita(lian)?'},
+    {value: 'korean',     emoji: '🇰🇷', pattern: 'korean'},
+    {value: 'portuguese', emoji: '🇵🇹', pattern: 'portuguese'},
+    {value: 'russian',    emoji: '🇷🇺', pattern: 'rus(sian)?'},
+    {value: 'swedish',    emoji: '🇸🇪', pattern: 'swedish'},
+    {value: 'tamil',      emoji: '🇮🇳', pattern: 'tamil'},
+    {value: 'turkish',    emoji: '🇹🇷', pattern: 'turkish'}
+  ].map(lang => {
+    lang.label = `${lang.emoji} ${lang.value.charAt(0).toUpperCase() + lang.value.slice(1)}`;
+    lang.pattern = new RegExp(` ${lang.pattern} `, 'i');
+    return lang;
+  })
+}
+
+function commaListToArray(str){
+  return str.split(',').map(str => str.trim()).filter(Boolean);
+}
+
+function sortCommaListToArray(str){
+  return commaListToArray(str).map(sort => {
+    const [key, reverse] = sort.split(':');
+    return [key.trim(), reverse.trim() == 'true'];
+  });
+}
+
+function boolOrString(str){
+  if(str.trim().toLowerCase() == 'true'){
+    return true;
+  }else if(str.trim().toLowerCase() == 'false'){
+    return false;
+  }else{
+    return str.trim();
+  }
+}

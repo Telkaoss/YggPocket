@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jackettio</title>
+    <link rel="icon" href="/icon">
+    <link href="/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+      .container {
+        max-width: 600px;
+      }
+      [v-cloak] { display: none; }
+    </style>
+  </head>
+  <body id="app">
+    <div class="container my-5" v-cloak>
+      <h1 class="mb-4">{{addon.name}} <span style="font-size:.6em">v{{addon.version}}</span></h1>
+      <form class="shadow p-3 bg-dark-subtle z-3 rounded">
+        <!-- welcome-message -->
+        <h5>Indexers</h5>
+        <div class="ps-2 border-start border-secondary-subtle">
+          <div class="mb-3 alert alert-warning" v-if="indexers.length == 0">
+            No indexers available, Jackett instance does not seem to be configured correctly.
+          </div>
+          <div class="mb-3" v-if="indexers.length >= 1 && !immulatableUserConfigKeys.includes('indexers')">
+            <label>Indexers enabled:</label>
+            <div class="d-flex">
+              <div v-for="indexer in indexers" class="me-3" :title="indexer.types.join(', ')">
+                <input class="form-check-input me-1" type="checkbox" v-model="indexer.checked" :id="indexer.label">
+                <label class="form-check-label" :for="indexer.label">{{indexer.label}}</label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('indexerTimeoutSec')">
+            <label>Indexer Timeout</label>
+            <input type="number" v-model="form.indexerTimeoutSec" min="6" max="120" class="form-control">
+            <small class="text-muted">Max execution time in seconds before timeout.</small>
+          </div>
+          <div class="mb-3" v-if="passkey && passkey.enabled">
+            <label>Private indexer Passkey <i>(Recommended)</i></label>
+            <small v-if="passkey.infoUrl" class="ms-2"><a :href="passkey.infoUrl" target="_blank" rel="noreferrer">Get It here</a></small>
+            <input type="text" v-model="form.passkey" class="form-control" :pattern="passkey.pattern">
+            <small class="text-muted">With the Passkey you can stream both cached and uncached torrents, while without the Passkey you can only stream cached torrents.</small>
+          </div>
+        </div>
+        <h5>Filters & Sorts</h5>
+        <div class="ps-2 border-start border-secondary-subtle">
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('qualities')">
+            <label>Qualities:</label>
+            <div class="d-flex">
+              <div v-for="quality in qualities" class="me-3">
+                <input class="form-check-input me-1" type="checkbox" v-model="quality.checked" :id="quality.label">
+                <label class="form-check-label" :for="quality.label">{{quality.label}}</label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('excludeKeywords')">
+            <label>Exclude keywords in torrent name</label>
+            <input type="text" v-model="form.excludeKeywords" placeholder="keyword1,keyword2" class="form-control">
+            <small class="text-muted">Example: cam,xvid</small>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('sortCached')">
+            <label>Cached torrents sorting</label>
+            <select v-model="form.sortCached" class="form-select">
+              <option v-for="sort in sorts" :value="sort.value">{{sort.label}}</option>
+            </select>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('sortUncached')">
+            <label>Uncached torrents sorting</label>
+            <select v-model="form.sortUncached" class="form-select">
+              <option v-for="sort in sorts" :value="sort.value">{{sort.label}}</option>
+            </select>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('maxTorrents')">
+            <label>Max Torrents in search</label>
+            <input type="number" v-model="form.maxTorrents" min="1" max="30" class="form-control">
+            <small class="text-muted">A high number can significantly slow down the request</small>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('priotizePackTorrents')">
+            <label>Force include <small>n</small> series pack in search</label>
+            <input type="number" v-model="form.priotizePackTorrents" min="1" max="30" class="form-control">
+            <small class="text-muted">This could increase the chance of cached torrents. 2 is a good number</small>
+          </div>
+          <div class="mb-3" v-if="!immulatableUserConfigKeys.includes('priotizeLanguages')">
+            <label>Priotize languages</label>
+            <select v-model="form.priotizeLanguages" class="form-select" multiple>
+              <option v-for="language in languages" :value="language.value">{{language.label}}</option>
+            </select>
+          </div>
+        </div>
+        <h5>Debrid</h5>
+        <div class="ps-2 border-start border-secondary-subtle">
+          <div class="mb-3 d-flex flex-row" v-if="!immulatableUserConfigKeys.includes('forceCacheNextEpisode')">
+            <input class="form-check-input me-1" type="checkbox" v-model="form.forceCacheNextEpisode" id="forceCacheNextEpisode">
+            <label for="forceCacheNextEpisode" class="d-flex flex-column">
+              <span>Prepare the next episode on Debrid. (Recommended)</span>
+              <small class="text-muted">Automatically add the next espisode on debrid when not avaiable to instantally stream it later.</small>
+            </label>
+          </div>
+          <div class="mb-3">
+            <label>Debrid provider:</label>
+            <select v-model="debrid" class="form-select" @change="form.debridId = debrid.id">
+              <option v-for="option in debrids" :value="option">{{ option.name }}</option>
+            </select>
+          </div>
+          <div v-for="field in debrid.configFields" class="mb-3">
+            <label>{{field.label}}:</label> 
+            <small v-if="field.href" class="ms-2"><a :href="field.href.value" target="_blank" rel="noreferrer">{{field.href.label}}</a></small>
+            <input type="{{field.type}}" v-model="field.value" class="form-control">
+          </div>
+        </div>
+        <div class="my-3 d-flex align-items-center">
+          <button @click="configure" type="button" class="btn btn-primary" :disabled="!debrid.id">{{isUpdate ? 'Update' : 'Install'}}</button>
+          <div v-if="error" class="text-danger ms-2">{{error}}</div>
+          <div class="ms-auto">
+            <a v-if="manifestUrl" :href="manifestUrl">Stremio Link</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script src="/js/vue.global.prod.js"></script>
+    <script type="text/javascript">/** import-config */</script>
+    <script type="text/javascript">
+      const { createApp, ref } = Vue
+      createApp({
+        setup() {
+
+          const {addon, debrids, defaultUserConfig, qualities, languages, sorts, indexers, passkey, immulatableUserConfigKeys} = config;
+
+          const debrid = ref({});
+          const error = ref('');
+          const manifestUrl = ref('');
+          let isUpdate = false;
+
+          if(config.userConfig){
+            try {
+              const savedUserConfig = JSON.parse(atob(config.userConfig));
+              Object.assign(defaultUserConfig, savedUserConfig);
+              debrid.value = debrids.find(debrid => debrid.id == savedUserConfig.debridId) || {};
+              debrid.value.configFields.forEach(field => field.value = savedUserConfig[field.name] || null);
+              isUpdate = true;
+            }catch(err){}
+          }
+
+          const form = {
+            maxTorrents: defaultUserConfig.maxTorrents,
+            priotizePackTorrents: defaultUserConfig.priotizePackTorrents,
+            excludeKeywords: defaultUserConfig.excludeKeywords.join(','),
+            debridId: defaultUserConfig.debridId || '',
+            sortCached: defaultUserConfig.sortCached,
+            sortUncached: defaultUserConfig.sortUncached,
+            forceCacheNextEpisode: defaultUserConfig.forceCacheNextEpisode,
+            priotizeLanguages: defaultUserConfig.priotizeLanguages,
+            indexerTimeoutSec: defaultUserConfig.indexerTimeoutSec
+          };
+          qualities.forEach(quality => quality.checked = defaultUserConfig.qualities.includes(quality.value));
+          indexers.forEach(indexer => indexer.checked = defaultUserConfig.indexers.includes(indexer.value) || defaultUserConfig.indexers.includes('all'));
+
+          async function configure(){
+            try {
+              error.value = '';
+              const userConfig = Object.assign({}, form);
+              userConfig.qualities = qualities.filter(quality => quality.checked).map(quality => quality.value);
+              userConfig.indexers = indexers.filter(indexer => indexer.checked).map(indexer => indexer.value);
+              userConfig.excludeKeywords = form.excludeKeywords.split(',').filter(Boolean);
+              debrid.value.configFields.forEach(field => {
+                if(field.required && !field.value)throw new Error(`${field.label} is required`);
+                userConfig[field.name] = field.value
+              });
+
+              if(!userConfig.debridId){
+                throw new Error(`Debrid is required`);
+              }
+
+              if(!userConfig.qualities.length){
+                throw new Error(`Quality is required`);
+              }
+
+              if(!userConfig.indexers.length && indexers.length){
+                throw new Error(`Indexer is required`);
+              }
+
+              if(passkey.enabled){
+                if(userConfig.passkey && !userConfig.passkey.match(new RegExp(passkey.pattern))){
+                  throw new Error(`Tracker passkey have invalid format: ${passkey.pattern}`);
+                }
+              }
+
+              manifestUrl.value = `stremio://${document.location.host}/${btoa(JSON.stringify(userConfig))}/manifest.json`;
+              document.location.href = manifestUrl.value;
+            }catch(err){
+              error.value = err.message || err;
+            }
+          }
+
+          return {
+            addon,
+            debrids,
+            debrid,
+            qualities,
+            sorts,
+            form,
+            configure,
+            error,
+            manifestUrl,
+            indexers,
+            passkey,
+            immulatableUserConfigKeys,
+            languages,
+            isUpdate
+          }
+        }
+      }).mount('#app')
+    </script>
+  </body>
+</html>
