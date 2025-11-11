@@ -6,6 +6,20 @@ This project is currently under development. Some features may be incomplete or 
 
 Stremio addon that resolves streams using **Yggtorrent** (french - Private Torrent) and Debrid services. Designed to run natively on Android via Termux.
 
+## Why YggPocket?
+
+We all have that old smartphone sitting in a drawer, or a powerful device in our pocket that's way too capable for our daily usage. **YggPocket** lets you repurpose that Android device as your personal streaming server!
+
+### Key Benefits
+
+- 💰 **No VPS/Server Needed**: Run everything directly on your Android device - no monthly hosting costs
+- 📱 **Use Your Spare Phone**: Turn that unused Android device into a powerful addon server
+- ⚡ **Native Performance**: Built specifically for Termux - no emulation, no proot, just fast native execution
+- 🔧 **Jackett Alternative**: Jackett doesn't work on Termux or proot, so YggPocket fills that gap perfectly
+- 🌐 **Always With You**: Your addon runs on your phone, accessible from anywhere via tunnel services
+
+Perfect for anyone who wants a self-hosted Stremio addon without the hassle and cost of maintaining a dedicated server!
+
 ## Features
 
 - 🔥 **Yggtorrent Integration**: Search torrents directly from Yggtorrent private tracker
