@@ -155,10 +155,10 @@ You can also edit `src/lib/config.js` directly to change settings.
 ## Supported Debrid Services
 
 ### Direct API Integration
-- **Real-Debrid** - Direct API integration with cache checking
-- **AllDebrid** - Direct API integration with cache checking
-- **DebridLink** - Direct API integration with cache checking
-- **Premiumize** - Direct API integration with cache checking
+- **Real-Debrid** - Direct API integration
+- **AllDebrid** - Direct API integration
+- **DebridLink** - Direct API integration
+- **Premiumize** - Direct API integration
 
 ### Via StremThru (Automatic)
 - **PikPak** - Automatically uses StremThru wrapper
