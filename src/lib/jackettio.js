@@ -235,17 +235,23 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
       // const packsPromises = indexers.map(indexer => promiseTimeout(yggflix.searchSeasonTorrents({...metaInfos, indexer: indexer.id}), indexerTimeoutSec*1000).catch(err => []));
       const packsPromises = indexers.map(indexer => promiseTimeout(yggflix.searchSerieTorrents({...metaInfos, indexer: indexer.id}), indexerTimeoutSec*1000).catch(err => []));
 
-      const episodesTorrents = [].concat(...(await Promise.all(episodesPromises))).filter(filterSearch);
+      const allEpisodesTorrents = [].concat(...(await Promise.all(episodesPromises)));
+      const episodesTorrents = allEpisodesTorrents.filter(filterSearch);
+
+      const allPacksTorrents = [].concat(...(await Promise.all(packsPromises)));
+
       // const packsTorrents = [].concat(...(await Promise.all(packsPromises))).filter(torrent => filterSearch(torrent) && parseWords(torrent.name.toUpperCase()).includes(`S${numberPad(season)}`));
-      const packsTorrents = [].concat(...(await Promise.all(packsPromises))).filter(torrent => {
-        if(!filterSearch(torrent))return false;
+      const packsTorrents = allPacksTorrents.filter(torrent => {
+        if(!filterSearch(torrent)){
+          return false;
+        }
         const words = parseWords(torrent.name.toLowerCase());
         const wordsStr = words.join(' ');
         if(
           // Season x
           wordsStr.includes(`season ${season}`)
-          // SXX
-          || words.includes(`s${numberPad(season)}`)
+          // SXX or SXXEXX
+          || wordsStr.includes(`s${numberPad(season)}`)
         ){
           return true;
         }
@@ -266,7 +272,29 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
       console.log(`${stremioId} : ${torrents.length} torrents found in ${(new Date() - startDate) / 1000}s`);
 
       torrents = torrents.filter(filterSearch).sort(sortBy(...sortSearch));
+
       torrents = priotizeItems(torrents, filterLanguage, Math.max(1, Math.round(maxTorrents * 0.33)));
+
+      // Filter by episode BEFORE slice to keep only torrents containing the requested episode
+      const exactEpisodePattern = new RegExp(`s0*${season}e0*${episode}(?!\\d)`, 'i');
+      const seasonOnlyPattern = new RegExp(`s0*${season}(?!e\\d)`, 'i'); // S30 but NOT S30E (season pack)
+      torrents = torrents.filter(torrent => {
+        const torrentNameNoSpaces = torrent.name.replace(/[\s\.\-_]/g, '').toLowerCase();
+
+        // Accept if matches exact episode (S30E04)
+        if(exactEpisodePattern.test(torrentNameNoSpaces)) {
+          return true;
+        }
+
+        // Accept if it's a season pack (S30 without episode number)
+        // Check if name contains S30 but NOT followed by an episode number
+        if(torrentNameNoSpaces.includes(`s${numberPad(season)}`) && !torrentNameNoSpaces.match(/s0*\d+e\d+/i)) {
+          return true;
+        }
+
+        return false;
+      });
+
       torrents = torrents.slice(0, maxTorrents + 2);
 
       if(priotizePackTorrents > 0 && packsTorrents.length && !torrents.find(t => packsTorrents.includes(t))){
@@ -285,14 +313,16 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
         torrent.infos = await promiseTimeout(torrentInfos.get(torrent), Math.min(30, indexerTimeoutSec)*1000);
         return torrent;
       }catch(err){
-        console.log(`${stremioId} Failed getting torrent infos for ${torrent.id} from indexer ${torrent.indexerId}`);
-        console.log(`${stremioId} ${torrent.link.replace(/apikey=[a-z0-9\-]+/, 'apikey=****')}`, err);
+        console.log(`${stremioId} ✗ Failed getting torrent infos for ${torrent.id} from indexer ${torrent.indexerId}: ${err.message}`);
         return false;
       }
     })));
-    torrents = torrents.filter(torrent => torrent && torrent.infos)
-      .filter((torrent, index, items) => items.findIndex(t => t.infos.infoHash == torrent.infos.infoHash) === index)
-      .slice(0, maxTorrents);
+
+    torrents = torrents.filter(torrent => torrent && torrent.infos);
+
+    torrents = torrents.filter((torrent, index, items) => items.findIndex(t => t.infos.infoHash == torrent.infos.infoHash) === index);
+
+    torrents = torrents.slice(0, maxTorrents);
 
     console.log(`${stremioId} : ${torrents.length} torrents infos found in ${(new Date() - startDate) / 1000}s`);
 
@@ -314,10 +344,13 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
         // Filter uncached torrents to only show those that contain the requested episode
         if(type == 'series') {
           uncachedTorrents = uncachedTorrents.filter(torrent => {
+            // Always keep torrents without file info (will be checked at download time)
             if(!torrent.infos || !torrent.infos.files || torrent.infos.files.length === 0) {
-              return true; // Keep torrents without file info (will be checked later)
+              return true;
             }
-            return !!searchEpisodeFile(torrent.infos.files, season, episode);
+            // For torrents with file info, check if the episode exists
+            const episodeFile = searchEpisodeFile(torrent.infos.files, season, episode);
+            return !!episodeFile;
           });
         }
 
@@ -330,11 +363,11 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
           });
         }
 
-        console.log(`${stremioId} : ${cachedTorrents.length} cached torrents on ${debridInstance.shortName}`);
+        console.log(`${stremioId} : ${cachedTorrents.length} cached, ${uncachedTorrents.length} uncached on ${debridInstance.shortName}`);
 
         torrents = [].concat(priotizeItems(cachedTorrents.sort(sortBy(...sortCached)), filterLanguage))
                      .concat(priotizeItems(uncachedTorrents.sort(sortBy(...sortUncached)), filterLanguage));
-      
+
         const progress = await debridInstance.getProgressTorrents(torrents);
         torrents.forEach(torrent => torrent.progress = progress[torrent.infos.infoHash] || null);
 
@@ -500,8 +533,7 @@ export async function getStreams(userConfig, type, stremioId, publicUrl){
     if (sourceInfo) mediaInfo.push(`📀 ${sourceInfo}`);
     if (audioInfo) mediaInfo.push(`🔊 ${audioInfo}`);
 
-    const rows = [torrent.name];
-    if(type == 'series' && file.name) rows.push(file.name);
+    const rows = [type == 'series' && file.name ? file.name : torrent.name];
     if(torrent.infoText) rows.push(`ℹ️ ${torrent.infoText}`);
 
     // Format main info line with improved styling
