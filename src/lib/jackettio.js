@@ -96,6 +96,14 @@ async function getMetaInfos(type, stremioId){
   }
 }
 
+function formatIndexerName(indexerId) {
+  const indexerNameMap = {
+    'yggflix': 'YGG-API',
+    'yggtorrent': 'YGG-API'
+  };
+  return indexerNameMap[indexerId.toLowerCase()] || indexerId;
+}
+
 function mergeDefaultUserConfig(userConfig){
   config.immulatableUserConfigKeys.forEach(key => delete userConfig[key]);
   return Object.assign({}, config.defaultUserConfig, userConfig);
@@ -500,7 +508,7 @@ export async function getStreams(userConfig, type, stremioId, publicUrl){
     rows.push([
       `💾 ${bytesToSize(file.size || torrent.size)}`,
       `👥 ${torrent.seeders}`,
-      `⚙️ ${torrent.indexerId}`,
+      `⚙️ ${formatIndexerName(torrent.indexerId)}`,
       ...formatLanguages(torrent.languages || [], torrent.name)
     ].join(' '));
 
@@ -525,7 +533,7 @@ export async function getStreams(userConfig, type, stremioId, publicUrl){
     }
 
     return {
-      name: `[${debridInstance.shortName}${statusIcon}] ${config.addonName} ${quality}`,
+      name: `[${debridInstance.shortName}${statusIcon}] ${quality}`,
       title: rows.join("\n"),
       url: torrent.disabled ? '#' : `${publicUrl}/${btoa(JSON.stringify(userConfig))}/download/${type}/${stremioId}/${torrent.id}`
     };
