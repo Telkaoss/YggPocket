@@ -1,10 +1,6 @@
-# ⚠️ Work in Progress
-
-This project is currently under development. Some features may be incomplete or subject to changes.
-
 # YggPocket - Stremio Addon for Android
 
-Stremio addon that resolves streams using **Yggtorrent** (french - Private Torrent) and Debrid services. Designed to run natively on Android via Termux.
+Stremio addon that resolves streams using **Yggtorrent** (French Private Tracker) and Debrid services. Designed to run natively on Android via Termux.
 
 ## Why YggPocket?
 
@@ -36,7 +32,7 @@ Perfect for anyone who wants a self-hosted Stremio addon without the hassle and 
 - Yggtorrent account with passkey
 - TMDB API Access Token (https://www.themoviedb.org/settings/api)
 - **Tunnel** (choose one):
-  - Ngrok account (free) for permanent domain
+  - Ngrok account (free) for permanent subdomain
   - Cloudflare account (free) for Quick Tunnel or Named Tunnel
   - Localtunnel (no account needed)
 - **Debrid service** (choose one):
@@ -73,7 +69,7 @@ During installation, you will be asked to choose a tunnel type and provide confi
      - Free accounts get random subdomain (e.g., a1b2c3d4.ngrok.app)
      - Paid accounts can choose custom subdomain
   4. Enter authtoken during setup
-  5. Optionally enter your static domain if created (otherwise new random domain at each restart)
+  5. Optionally enter your static domain if created
 
 **2. Cloudflare Quick Tunnel**
 - ✅ NO warning page (works on all platforms)
@@ -85,13 +81,14 @@ During installation, you will be asked to choose a tunnel type and provide confi
 - ✅ NO warning page
 - ✅ Permanent domain
 - ❌ Requires personal domain (any registrar)
+- Configuration https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel/
 
 **4. Localtunnel**
 - ✅ FREE, no account needed
 - ✅ Custom persistent subdomain
 - ⚠️ IP confirmation needed every 7 days
 - Configuration:
-  1. Optionally choose a subdomain during setup (e.g., "jackettio-android")
+  1. Optionally choose a subdomain during setup (e.g., "yggpocket-android")
   2. Your URL will be `https://your-subdomain.loca.lt`
   3. First-time visitors see a warning page asking for your public IP as password
   4. Get your IP: `curl https://loca.lt/mytunnelpassword`
@@ -111,8 +108,27 @@ During installation, you will be asked to choose a tunnel type and provide confi
 
 ### Start the Addon
 
+**Foreground (normal):**
 ```bash
 npm start
+```
+
+**Background (continues after closing Termux):**
+```bash
+# Acquire wake-lock to prevent Android from killing the process
+termux-wake-lock
+
+# Run in background with logs
+nohup npm start > ~/yggpocket.log 2>&1 &
+
+# View logs
+tail -f ~/yggpocket.log
+```
+
+**To stop background process:**
+```bash
+pkill -9 node
+termux-wake-unlock
 ```
 
 The addon URL will be displayed in the console based on your tunnel choice:
@@ -151,16 +167,6 @@ If using Localtunnel, first-time visitors will see a warning page:
 
 **Note**: The subdomain persists across restarts, so you only need to reconfigure Stremio if you change your subdomain.
 
-### Restart
-
-If ports 4000 or 9117 are already in use, restart Termux:
-
-```bash
-# Exit Termux completely, then reopen and run:
-cd YggPocket/
-npm start
-```
-
 ### Manual Config
 
 You can also edit `src/lib/config.js` directly to change settings.
@@ -186,6 +192,21 @@ You can also edit `src/lib/config.js` directly to change settings.
 - Recommended for services without direct API integration
 
 ## Troubleshooting
+
+### Port 4000 Already in Use
+
+If you see an error that port 4000 is already in use:
+
+```bash
+# Kill all Node processes
+pkill -9 node
+
+# If that doesn't work, kill manually:
+ps aux
+kill -9 <PID>
+```
+
+Then restart the addon with `npm start`.
 
 ### "No torrents found"
 - Make sure your TMDB Access Token is correctly configured
