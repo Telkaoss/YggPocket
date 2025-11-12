@@ -61,8 +61,8 @@ During installation, you will be asked to choose a tunnel type and provide confi
 **1. Ngrok**
 - ✅ Works immediately with Stremio on Android
 - ⚠️ Free plan shows an interstitial warning page that blocks Stremio Web/Desktop (Chromium CORS/X-Frame protections)
-- 🔁 Free plan provides a persistent (random-looking) subdomain tied to your account
-- ✅ Paid custom domain removes the warning page and stays fixed
+- 🔁 Free plan provides a permanent (random-looking) subdomain tied to your account
+- ✅ Paid custom subdomain removes the warning page and stays fixed
 - Configuration:
   1. Go to [Ngrok Dashboard](https://dashboard.ngrok.com/signup) and create free account
   2. Navigate to "Your Authtoken" and copy it
@@ -80,7 +80,7 @@ During installation, you will be asked to choose a tunnel type and provide confi
 
 **3. Cloudflare Named Tunnel**
 - ✅ NO warning page
-- ✅ Permanent subdomain
+- ✅ Permanent domain
 - ❌ Requires personal domain (any registrar)
 - Configuration https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel/
 
