@@ -32,7 +32,7 @@ Perfect for anyone who wants a self-hosted Stremio addon without the hassle and 
 - Yggtorrent account with passkey
 - TMDB API Access Token (https://www.themoviedb.org/settings/api)
 - **Tunnel** (choose one):
-  - Ngrok account (free) for permanent domain
+  - Ngrok account (free) for permanent subdomain
   - Cloudflare account (free) for Quick Tunnel or Named Tunnel
   - Localtunnel (no account needed)
 - **Debrid service** (choose one):
@@ -69,7 +69,7 @@ During installation, you will be asked to choose a tunnel type and provide confi
      - Free accounts get random subdomain (e.g., a1b2c3d4.ngrok.app)
      - Paid accounts can choose custom subdomain
   4. Enter authtoken during setup
-  5. Optionally enter your static domain if created (otherwise new random domain at each restart)
+  5. Optionally enter your static domain if created
 
 **2. Cloudflare Quick Tunnel**
 - ✅ NO warning page (works on all platforms)
