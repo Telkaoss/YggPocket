@@ -81,13 +81,14 @@ During installation, you will be asked to choose a tunnel type and provide confi
 - ✅ NO warning page
 - ✅ Permanent domain
 - ❌ Requires personal domain (any registrar)
+- Configuration https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel/
 
 **4. Localtunnel**
 - ✅ FREE, no account needed
 - ✅ Custom persistent subdomain
 - ⚠️ IP confirmation needed every 7 days
 - Configuration:
-  1. Optionally choose a subdomain during setup (e.g., "jackettio-android")
+  1. Optionally choose a subdomain during setup (e.g., "yggpocket-android")
   2. Your URL will be `https://your-subdomain.loca.lt`
   3. First-time visitors see a warning page asking for your public IP as password
   4. Get your IP: `curl https://loca.lt/mytunnelpassword`
