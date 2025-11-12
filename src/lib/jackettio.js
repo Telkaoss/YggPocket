@@ -301,7 +301,17 @@ async function getTorrents(userConfig, metaInfos, debridInstance){
           torrent.isCached = true;
           return torrent;
         });
-        const uncachedTorrents = torrents.filter(torrent => cachedTorrents.indexOf(torrent) === -1);
+        let uncachedTorrents = torrents.filter(torrent => cachedTorrents.indexOf(torrent) === -1);
+
+        // Filter uncached torrents to only show those that contain the requested episode
+        if(type == 'series') {
+          uncachedTorrents = uncachedTorrents.filter(torrent => {
+            if(!torrent.infos || !torrent.infos.files || torrent.infos.files.length === 0) {
+              return true; // Keep torrents without file info (will be checked later)
+            }
+            return !!searchEpisodeFile(torrent.infos.files, season, episode);
+          });
+        }
 
         if(config.replacePasskey && !(userConfig.passkey && userConfig.passkey.match(new RegExp(config.replacePasskeyPattern)))){
           uncachedTorrents.forEach(torrent => {
