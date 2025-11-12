@@ -19,7 +19,7 @@ Perfect for anyone who wants a self-hosted Stremio addon without the hassle and 
 ## Features
 
 - 🔥 **Yggtorrent Integration**: Search torrents directly from Yggtorrent private tracker
-- 🌐 **4 Tunnel Options**: Ngrok (permanent domain), Cloudflare Quick/Named, Localtunnel
+- 🌐 **4 Tunnel Options**: Ngrok, Cloudflare Quick/Named, Localtunnel
 - 📱 **Android Native**: Runs directly on Termux without emulation
 - 🚀 **9 Debrid Services**: Real-Debrid, AllDebrid, DebridLink, Premiumize, PikPak, TorBox, EasyDebrid, Offcloud, StremThru
 - 🎯 **StremThru Integration**: Unified debrid API with cache checking
@@ -32,7 +32,7 @@ Perfect for anyone who wants a self-hosted Stremio addon without the hassle and 
 - Yggtorrent account with passkey
 - TMDB API Access Token (https://www.themoviedb.org/settings/api)
 - **Tunnel** (choose one):
-  - Ngrok account (free) for permanent subdomain
+  - Ngrok account (free) for HTTPS tunnel, custom subdomain optional
   - Cloudflare account (free) for Quick Tunnel or Named Tunnel
   - Localtunnel (no account needed)
 - **Debrid service** (choose one):
@@ -59,9 +59,10 @@ During installation, you will be asked to choose a tunnel type and provide confi
 #### Tunnel Options
 
 **1. Ngrok**
-- ✅ FREE persistent subdomain
-- ❌ Warning page (may block Windows/Web Stremio)
-- ⚠️ Custom subdomain requires PAID plan
+- ✅ Works immediately with Stremio on Android
+- ⚠️ Free plan shows an interstitial warning page that blocks Stremio Web/Desktop (Chromium CORS/X-Frame protections)
+- 🔁 Free plan provides a permanent (random-looking) subdomain tied to your account
+- ✅ Paid custom subdomain removes the warning page and stays fixed
 - Configuration:
   1. Go to [Ngrok Dashboard](https://dashboard.ngrok.com/signup) and create free account
   2. Navigate to "Your Authtoken" and copy it
@@ -69,7 +70,7 @@ During installation, you will be asked to choose a tunnel type and provide confi
      - Free accounts get random subdomain (e.g., a1b2c3d4.ngrok.app)
      - Paid accounts can choose custom subdomain
   4. Enter authtoken during setup
-  5. Optionally enter your static domain if created
+  5. Optional (paid): enter your custom subdomain if purchased
 
 **2. Cloudflare Quick Tunnel**
 - ✅ NO warning page (works on all platforms)
@@ -132,8 +133,8 @@ termux-wake-unlock
 ```
 
 The addon URL will be displayed in the console based on your tunnel choice:
-- **Ngrok Free**: `https://a1b2c3d4.ngrok.app` (permanent if static domain created, random subdomain)
-- **Ngrok Paid**: `https://ygg-api.ngrok.app` (permanent, custom subdomain)
+- **Ngrok Free**: `https://a1b2c3d4.ngrok.app` (persistent subdomain assigned to your account; works on Android only because of warning page on Web/Desktop)
+- **Ngrok Paid**: `https://ygg-api.ngrok.app` (persistent and custom subdomain; works on Android, Web, and Desktop)
 - **Cloudflare Quick**: `https://random-subdomain.trycloudflare.com` (changes each restart)
 - **Cloudflare Named**: `https://your-subdomain.your-domain.com` (permanent)
 - **Localtunnel**: `https://your-subdomain.loca.lt` (persistent)
@@ -218,10 +219,10 @@ Then restart the addon with `npm start`.
 **Ngrok not working:**
 - Verify your authtoken is correct
 - Error ERR_NGROK_314 (custom hostname): Custom subdomains require paid plan
-  - Free accounts get random subdomain (e.g., a1b2c3d4.ngrok.app)
+  - Free accounts get a persistent subdomain assigned to their account (e.g., a1b2c3d4.ngrok.app)
   - Paid accounts can choose subdomain (e.g., ygg-api.ngrok.app)
-- If no static domain configured, URL changes at each restart
-- Windows/Web Stremio users may see a warning page - use Cloudflare instead
+- If you don't claim your free subdomain, ngrok rotates the URL at each restart—reserve it under Domains to keep it fixed
+- Free plan warning page blocks Stremio Web/Desktop; use Cloudflare or upgrade to a paid static domain to avoid it
 
 **Cloudflare Quick Tunnel not working:**
 - Check that port 4000 is not blocked
