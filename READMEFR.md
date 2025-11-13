@@ -60,12 +60,6 @@ Cela va :
 - Créer une commande globale `yggpocket` (accessible depuis n'importe où dans Termux)
 - Ajouter automatiquement `~/.local/bin` à votre PATH
 
-Après l'installation, activez la commande globale :
-```bash
-source ~/.bashrc
-# OU redémarrez Termux
-```
-
 Pendant l'installation, il vous sera demandé de choisir un type de tunnel et de fournir la configuration :
 
 #### Options de Tunnel
