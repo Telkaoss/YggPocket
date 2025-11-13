@@ -78,7 +78,7 @@ Pendant l'installation, il vous sera demandé de choisir un type de tunnel et de
 - Configuration :
   1. Allez sur [Ngrok Dashboard](https://dashboard.ngrok.com/signup) et créez un compte gratuit
   2. Naviguez vers "Your Authtoken" et copiez-le
-  3. Optionnel : Allez sur [Domains](https://dashboard.ngrok.com/domains) et cliquez sur "+ New Domain"
+  3. Allez sur [Domains](https://dashboard.ngrok.com/domains) et cliquez sur "+ New Domain"
      - Les comptes gratuits obtiennent un sous-domaine aléatoire (ex : a1b2c3d4.ngrok.app)
      - Les comptes payants peuvent choisir un sous-domaine personnalisé
   4. Entrez l'authtoken pendant l'installation
