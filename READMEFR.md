@@ -9,7 +9,7 @@ Nous avons tous ce vieux smartphone qui traîne dans un tiroir, ou un appareil p
 ### Avantages Clés
 
 - 💰 **Pas Besoin de VPS/Serveur** : Exécutez tout directement sur votre appareil Android - pas de frais d'hébergement mensuels
-- 📱 **Utilisez Votre Téléphone de Rechange** : Transformez cet appareil Android inutilisé en un puissant serveur d'addon
+- 📱 **Utilisez Votre Téléphone** : Transformez cet appareil Android inutilisé en un puissant serveur d'addon
 - ⚡ **Performance Native** : Construit spécifiquement pour Termux - pas d'émulation, pas de proot, juste une exécution native rapide
 - 🔧 **Alternative à Jackett** : Jackett ne fonctionne pas sur Termux ou proot, donc YggPocket comble parfaitement cette lacune
 - 🌐 **Toujours Avec Vous** : Votre addon fonctionne sur votre téléphone, accessible de partout via les services de tunnel
