@@ -133,6 +133,101 @@ const updateConfig = (configFile, key, value) => {
   });
 };
 
+// Create global command script
+const createGlobalCommand = () => {
+  try {
+    console.log('\n📦 Creating global yggpocket command...');
+    const homeDir = process.env.HOME || '/data/data/com.termux/files/home';
+    const binDir = path.join(homeDir, '.local', 'bin');
+    const scriptPath = path.join(binDir, 'yggpocket');
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    // Create .local/bin directory if it doesn't exist
+    if (!fs.existsSync(binDir)) {
+      fs.mkdirSync(binDir, { recursive: true });
+    }
+
+    // Create the yggpocket command script
+    const scriptContent = `#!/data/data/com.termux/files/usr/bin/bash
+
+# YggPocket CLI wrapper
+YGGPOCKET_DIR="${__dirname}"
+
+case "$1" in
+  install)
+    echo "📦 Installing YggPocket dependencies..."
+    cd "$YGGPOCKET_DIR" && npm install
+    ;;
+  start)
+    echo "🚀 Starting YggPocket..."
+    cd "$YGGPOCKET_DIR" && npm start
+    ;;
+  setup)
+    echo "⚙️  Running YggPocket setup..."
+    cd "$YGGPOCKET_DIR" && node setup.js
+    ;;
+  *)
+    echo "YggPocket CLI"
+    echo ""
+    echo "Usage: yggpocket <command>"
+    echo ""
+    echo "Commands:"
+    echo "  install    Install dependencies (npm install)"
+    echo "  start      Start the server (npm start)"
+    echo "  setup      Run the setup script"
+    echo ""
+    ;;
+esac
+`;
+
+    fs.writeFileSync(scriptPath, scriptContent, { mode: 0o755 });
+    console.log(`✅ Global command created at: ${scriptPath}`);
+    console.log('');
+
+    // Check if ~/.local/bin is in PATH and add it automatically
+    const bashrcPath = path.join(homeDir, '.bashrc');
+    const pathExport = 'export PATH="$HOME/.local/bin:$PATH"';
+
+    try {
+      // Read .bashrc if it exists, or create it
+      let bashrcContent = '';
+      if (fs.existsSync(bashrcPath)) {
+        bashrcContent = fs.readFileSync(bashrcPath, 'utf8');
+      }
+
+      // Check if PATH export is already in .bashrc
+      if (!bashrcContent.includes('.local/bin')) {
+        fs.appendFileSync(bashrcPath, `\n# Added by YggPocket setup\n${pathExport}\n`);
+        console.log('✅ Added ~/.local/bin to PATH in ~/.bashrc');
+        console.log('');
+        console.log('⚠️  To activate the command now, run:');
+        console.log('   source ~/.bashrc');
+        console.log('');
+        console.log('   OR restart Termux');
+        console.log('');
+      } else {
+        console.log('✅ ~/.local/bin is already in PATH');
+        console.log('');
+      }
+    } catch (error) {
+      console.log('⚠️  Could not modify .bashrc automatically');
+      console.log('   Please add manually:');
+      console.log(`   echo '${pathExport}' >> ~/.bashrc`);
+      console.log('   source ~/.bashrc');
+      console.log('');
+    }
+
+    console.log('You can now use from anywhere:');
+    console.log('  yggpocket install  - Install dependencies');
+    console.log('  yggpocket start    - Start the server');
+    console.log('  yggpocket setup    - Run setup again');
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error creating global command:', error.message);
+  }
+};
+
 // Function to start the server
 const startServer = () => {
   console.log('Starting the server...');
@@ -163,6 +258,9 @@ const main = async () => {
 
     // Install dependencies
     await installDependencies();
+
+    // Create global command
+    createGlobalCommand();
 
     // Get local IP
     const localIp = getLocalIp();
