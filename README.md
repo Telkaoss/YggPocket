@@ -54,6 +54,18 @@ pkg update && pkg upgrade && pkg install -y nodejs-lts git && git clone https://
 npm install
 ```
 
+This will:
+- Install all dependencies
+- Run the interactive setup wizard
+- Create a global `yggpocket` command (accessible from anywhere in Termux)
+- Automatically add `~/.local/bin` to your PATH
+
+After installation, activate the global command:
+```bash
+source ~/.bashrc
+# OR restart Termux
+```
+
 During installation, you will be asked to choose a tunnel type and provide configuration:
 
 #### Tunnel Options
@@ -107,20 +119,41 @@ During installation, you will be asked to choose a tunnel type and provide confi
 
 ## Usage
 
+### Global Commands
+
+After installation, you can use the `yggpocket` command from anywhere in Termux:
+
+```bash
+# Start the addon
+yggpocket start
+
+# Install/reinstall dependencies
+yggpocket install
+
+# Run setup again (reconfigure)
+yggpocket setup
+```
+
 ### Start the Addon
 
-**Foreground (normal):**
+**From anywhere (using global command):**
 ```bash
+yggpocket start
+```
+
+**Or manually from project directory:**
+```bash
+cd ~/YggPocket
 npm start
 ```
 
-**Background (continues after closing Termux):**
+**Background mode (continues after closing Termux):**
 ```bash
 # Acquire wake-lock to prevent Android from killing the process
 termux-wake-lock
 
 # Run in background with logs
-nohup npm start > ~/yggpocket.log 2>&1 &
+nohup yggpocket start > ~/yggpocket.log 2>&1 &
 
 # View logs
 tail -f ~/yggpocket.log
@@ -193,6 +226,24 @@ You can also edit `src/lib/config.js` directly to change settings.
 - Recommended for services without direct API integration
 
 ## Troubleshooting
+
+### Command 'yggpocket' not found
+
+If the global command doesn't work after installation:
+
+```bash
+# Make sure ~/.local/bin is in your PATH
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Or restart Termux
+```
+
+If the issue persists, run setup again:
+```bash
+cd ~/YggPocket
+npm install
+```
 
 ### Port 4000 Already in Use
 
