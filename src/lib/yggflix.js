@@ -192,7 +192,7 @@ function detectLanguages(title) {
 
 function normalizeItems(items, type, tmdbId) {
   return items.map(item => {
-    const quality = item.title.match(/(2160|1080|720|480|360)p/);
+    const quality = item.title.match(/(2160|1080|720|480|360)p/i);
     const title = parseWords(item.title).join(' ');
     const downloadLink = config.yggflixPasskey ?
       yggflixApi.getDownloadUrl(item.id, config.yggflixPasskey) :
