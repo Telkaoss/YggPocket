@@ -513,9 +513,6 @@ const startServer = async () => {
     vacuumCache().catch(err => console.log(`Failed to vacuum cache: ${err}`));
     intervals.push(setInterval(() => vacuumCache(), 86400e3*7));
 
-    cleanCache().catch(err => console.log(`Failed to clean cache: ${err}`));
-    intervals.push(setInterval(() => cleanCache(), 3600e3));
-
     function closeGracefully(signal) {
       console.log(`Received signal to terminate: ${signal}`);
       intervals.forEach(interval => clearInterval(interval));
