@@ -596,6 +596,9 @@ export async function getDownload(userConfig, type, stremioId, torrentId){
       getMetaInfos(type, stremioId).then(metaInfos => prepareNextEpisode(userConfig, metaInfos, debridInstance));
     }
 
+    download = await cache.get(cacheKey);
+    if(download) return download;
+
     console.log(`${stremioId} : ${debridInstance.shortName} : ${infos.infoHash} : get files ...`);
     files = await getDebridFiles(userConfig, infos, debridInstance);
     console.log(`${stremioId} : ${debridInstance.shortName} : ${infos.infoHash} : ${files.length} files found`);
@@ -614,6 +617,7 @@ export async function getDownload(userConfig, type, stremioId, torrentId){
     }
 
     if(download){
+      await cache.set(cacheKey, download, {ttl: 3600}); // 1 heure
       return download;
     }
 
