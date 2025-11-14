@@ -18,7 +18,7 @@ if (!fs.existsSync(cacheFolder)) {
 const cacheOptions = {
   store: fsStore,
   path: cacheFolder,
-  ttl: 60 * 60, // 1 heure
+  ttl: 60 * 60 * 4, // 4 heures
   max: 1000 // nombre maximum d'éléments dans le cache
 };
 
