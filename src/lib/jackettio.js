@@ -577,7 +577,6 @@ export async function getDownload(userConfig, type, stremioId, torrentId){
 
   userConfig = mergeDefaultUserConfig(userConfig);
   const debridInstance = debrid.instance(userConfig);
-  const infos = await torrentInfos.getById(torrentId);
   const {id, season, episode} = parseStremioId(stremioId);
   const cacheKey = `download:2:${await debridInstance.getUserHash()}:${stremioId}:${torrentId}`;
   let files;
@@ -599,6 +598,7 @@ export async function getDownload(userConfig, type, stremioId, torrentId){
     download = await cache.get(cacheKey);
     if(download) return download;
 
+    const infos = await torrentInfos.getById(torrentId);
     console.log(`${stremioId} : ${debridInstance.shortName} : ${infos.infoHash} : get files ...`);
     files = await getDebridFiles(userConfig, infos, debridInstance);
     console.log(`${stremioId} : ${debridInstance.shortName} : ${infos.infoHash} : ${files.length} files found`);
